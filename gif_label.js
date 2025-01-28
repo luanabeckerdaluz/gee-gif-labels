@@ -1,56 +1,68 @@
-var text = require('users/gena/packages:text')
-var style = require('users/gena/packages:style')
-  
-exports.gif_label = function(params){
-  // Verify if params has all keys
-  var requiredKeys = [
-    'col', 'ROI', 'geom_label_position', 'vis_params',
-    'backgroundColor', 'backgroundValue', 'sensorScale',
-    'proj', 'fontScale', 'col_label_attribute', 
-    'labelParams', 'gifParams'
-  ];
-  var allKeysPresent = requiredKeys.every(function(key) {
-    return params.hasOwnProperty(key);
-  });
-  if (!allKeysPresent) {
-    throw new Error('ERROR: params needs to have all the following keys: ' + requiredKeys.join(', '));
-  }
 
-  /* Force fontSize = 64
-    This is done in order to have a good resolution font. 
-    Its size is actually controlled by fontSize parameter 
-    (which is the 'scale' parameter in text.draw function)
-  */
-  params.labelParams.fontSize = 64
-  
-  // For each col image, apply visualize and blend with label
-  var blended_col = params.col.map(function(img){
-    var vis_img = img
-      .reproject(params.proj, null, params.sensorScale)
-      .visualize(params.vis_params)
-      
-    var label = text.draw(
-      img.get(params.col_label_attribute),
-      params.geom_label_position, 
-      params.fontScale,
-      params.labelParams
-    )
-    
-    return vis_img
-      .blend(label)
-      .copyProperties(img, [params.col_label_attribute])
+// Region of Interest (ROI)
+var ROI_FC = ee.FeatureCollection("projects/ee-luanabeckerdaluz/assets/paper2NPP/shapefiles/shpMesoregionRS")
+var ROI = ROI_FC.geometry()
+Map.addLayer(ROI, {}, 'ROI')
+Map.centerObject(ROI)
+
+// Set scale (m/px)
+var SCALE_M_PX = 1000
+
+// NDVI collection
+var collectionNDVI = ee.ImageCollection('MODIS/061/MOD13Q1')
+  .filterBounds(ROI)
+  .filterDate('2018-01-01', '2018-02-18')
+  .select('NDVI')
+  .map(function(img){
+    return img
+      .rename('NDVI')                               // Rename band
+      .multiply(0.0001)                             // Apply band scale
+      .reproject('EPSG:4326', null, SCALE_M_PX)     // Downscale/Upscale image
+      .clip(ROI)                                    // Clipt to geometry
+      .set("date", img.date().format("yyyy-MM-dd")) // Set date property
   })
-  
-  // Force set same proj on gif params
-  params.gifParams.crs = params.proj
-  // Force set same ROI gif params
-  params.gifParams.ROI = params.geom_label_position
-  
-  // Generate GIF
-  print(
-    ui.Thumbnail({
-      image: blended_col, 
-      params: params.gifParams
-    })
-  )
-}
+
+Map.addLayer(
+  collectionNDVI.first(), 
+  {min:0.2, max:1.0, palette:['lightgreen','darkgreen','yellow','orange','red','darkred']},
+  'IN - collectionNDVI img1'
+)
+print(collectionNDVI)
+
+
+/*--------- ! ATTENTION ! -----------
+
+  Input collection for gif must be 
+previously reprojected and clipped!
+ 
+----------- ! ATTENTION ! -----------*/
+
+var utils = require('users/luanabeckerdaluz/GEEtools:gif_label')
+
+utils.gif_label({
+  col: collectionNDVI,
+  coord_label_position: geom_label_top_left,
+  vis_params: {
+    min:0.2, 
+    max:1.0, 
+    palette:['lightgreen','darkgreen','yellow','orange','red','darkred']
+  },
+  backgroundColor: "white",
+  backgroundValue: -1,
+  sensorScale: SCALE_M_PX,
+  fontScale: 250,
+  proj: "EPSG:4326",
+  col_label_attribute: "date",
+  labelParams: {
+    fontType: 'Arial', 
+    textColor: 'ffffff', 
+    outlineColor: '000000', 
+    outlineWidth: 1, 
+    outlineOpacity: 0.7
+  },
+  gifParams:{
+    ROI: ROI,
+    dimensions: 1024,
+    framesPerSecond: 5
+  }
+})
