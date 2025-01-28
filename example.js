@@ -22,8 +22,11 @@ var collectionNDVI = ee.ImageCollection('MODIS/061/MOD13Q1')
       .set("date", img.date().format("yyyy-MM-dd")) // Set date property
   })
 
-var NDVIvis = {min:0.2, max:1.0, palette:['lightgreen','darkgreen','yellow','orange','red','darkred']}
-Map.addLayer(collectionNDVI.first(), NDVIvis, 'IN - collectionNDVI img1')
+Map.addLayer(
+  collectionNDVI.first(), 
+  {min:0.2, max:1.0, palette:['lightgreen','darkgreen','yellow','orange','red','darkred']},
+  'IN - collectionNDVI img1'
+)
 print(collectionNDVI)
 
 
@@ -39,11 +42,17 @@ var utils = require('users/luanabeckerdaluz/GEEtools:gif_label')
 utils.gif_label({
   col: collectionNDVI,
   ROI: ROI,
-  geom_label_top_left: geom_label_top_left,
-  vis_params: NDVIvis,
+  geom_label_position: geom_label_top_left,
+  vis_params: {
+    min:0.2, 
+    max:1.0, 
+    palette:['lightgreen','darkgreen','yellow','orange','red','darkred']
+  },
+  backgroundColor: "white",
+  backgroundValue: -1,
   sensorScale: SCALE_M_PX,
   fontScale: 250,
-  // projection,
+  proj: "EPSG:4326",
   col_label_attribute: "date",
   labelParams: {
     fontType: 'Arial', 
@@ -53,9 +62,7 @@ utils.gif_label({
     outlineOpacity: 0.7
   },
   gifParams:{
-    crs: 'EPSG:4326',
     dimensions: 1024,
-    region: ROI,
     framesPerSecond: 5
   }
 })
