@@ -4,15 +4,16 @@ var style = require('users/gena/packages:style')
 exports.gif_label = function(params){
   // Verify if params has all keys
   var requiredKeys = [
-    'col', 'ROI', 'geom_label_top_left', 'vis_params',
-    'sensorScale', 'fontScale', 'col_label_attribute',
+    'col', 'ROI', 'geom_label_position', 'vis_params',
+    'backgroundColor', 'backgroundValue', 'sensorScale',
+    'proj', 'fontScale', 'col_label_attribute', 
     'labelParams', 'gifParams'
   ];
   var allKeysPresent = requiredKeys.every(function(key) {
     return params.hasOwnProperty(key);
   });
   if (!allKeysPresent) {
-    throw new Error('Error: params needs to have all the following keys: col, ROI, geom_label_top_left, vis_params, sensorScale, fontScale, col_label_attribute, labelParams, gifParams');
+    throw new Error('ERROR: params needs to have all the following keys: ' + requiredKeys.join(', '));
   }
 
   /* Force fontSize = 64
@@ -25,12 +26,12 @@ exports.gif_label = function(params){
   // For each col image, apply visualize and blend with label
   var blended_col = params.col.map(function(img){
     var vis_img = img
-      .reproject('EPSG:4326', null, params.sensorScale)
+      .reproject(params.proj, null, params.sensorScale)
       .visualize(params.vis_params)
       
     var label = text.draw(
       img.get(params.col_label_attribute),
-      params.geom_label_top_left, 
+      params.geom_label_position, 
       params.fontScale,
       params.labelParams
     )
@@ -39,6 +40,11 @@ exports.gif_label = function(params){
       .blend(label)
       .copyProperties(img, [params.col_label_attribute])
   })
+  
+  // Force set same proj on gif params
+  params.gifParams.crs = params.proj
+  // Force set same ROI gif params
+  params.gifParams.ROI = params.geom_label_position
   
   // Generate GIF
   print(
