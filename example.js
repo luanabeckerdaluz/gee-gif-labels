@@ -41,8 +41,7 @@ var utils = require('users/luanabeckerdaluz/GEEtools:gif_label')
 
 utils.gif_label({
   col: collectionNDVI,
-  ROI: ROI,
-  geom_label_position: geom_label_top_left,
+  coord_label_position: geom_label_top_left,
   vis_params: {
     min:0.2, 
     max:1.0, 
@@ -62,6 +61,7 @@ utils.gif_label({
     outlineOpacity: 0.7
   },
   gifParams:{
+    ROI: ROI,
     dimensions: 1024,
     framesPerSecond: 5
   }
