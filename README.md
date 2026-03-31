@@ -24,10 +24,9 @@ developed."></a>
 
 You can create GIFs with labels using black background and white background, as presented below:
 
-Black background and white background examples:
 <h1 align="center">
-  <a><img src="gifs/black_bg.gif" width="500"></a>
-  <a><img src="gifs/white_bg.gif" width="500"></a>
+  <a><img src="gifs/black_bg.gif" width="300"></a>
+  <a><img src="gifs/white_bg.gif" width="300"></a>
 </h1>
 
 You can run our example [directly on GEE using this link](https://code.earthengine.google.com/ff9732b20c1c1b205a1a157465e53e1c) !
